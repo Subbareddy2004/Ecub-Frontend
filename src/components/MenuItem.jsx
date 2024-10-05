@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaPlus, FaMinus, FaStar } from 'react-icons/fa';
+import { FaPlus, FaMinus, FaStar, FaStore } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
 const MenuItem = ({ item }) => {
@@ -17,7 +17,12 @@ const MenuItem = ({ item }) => {
         <div className="bg-white rounded-lg shadow-md p-4">
             <img src={item.productImg} alt={item.productTitle} className="w-full h-48 object-cover rounded-t-lg" />
             <h3 className="text-xl font-semibold mt-2">{item.productTitle}</h3>
-            <p className="text-sm text-gray-600">{item.productDesc}</p>
+            {item.hotelName && (
+                <p className="text-sm text-gray-600 flex items-center mt-1">
+                    <FaStore className="mr-1" /> {item.hotelName}
+                </p>
+            )}
+            <p className="text-sm text-gray-600 mt-1">{item.productDesc}</p>
             <div className="flex items-center mt-2">
                 <FaStar className="text-yellow-400 mr-1" />
                 <span>{item.productRating ? item.productRating.toFixed(1) : 'N/A'}</span>
