@@ -13,6 +13,8 @@ const Signup = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  console.log('API URL:', import.meta.env.VITE_API_URL);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
