@@ -1,43 +1,184 @@
 import { db, collection, getDocs, doc, getDoc } from './firebase';
 import { getDistance } from 'geolib';
-import axios from 'axios'; // Make sure to install axios: npm install axios
 
-const getPincodeCoordinates = async (pincode) => {
+export const fetchMenuItems = async () => {
 	try {
-		const response = await axios.get(`https://api.postalpincode.in/pincode/${pincode}`);
-		if (response.data[0].Status === "Success") {
-			const postOffice = response.data[0].PostOffice[0];
-			return {
-				latitude: parseFloat(postOffice.Latitude),
-				longitude: parseFloat(postOffice.Longitude)
-			};
-		}
-		return null;
+		const foodItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));
+		return foodItemsSnapshot.docs.map(doc => ({
+			id: doc.id,
+			...doc.data(),
+			productRating: doc.data().productRating || 0 // Provide a default value if missing
+		}));
 	} catch (error) {
-		console.error('Error fetching pincode coordinates:', error);
-		return null;
+		console.error('Error fetching menu items:', error);
+		throw error;
 	}
 };
 
-export const fetchMenuItems = async () => {
-    const menuSnapshot = await getDocs(collection(db, 'fs_food_items','fs_food_items1'));
-    return menuSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+// const menuItems = menuItemsSnapshot.docs
+//     .filter(doc => doc.data().productOwnership === hotelData.hotelName)
+//     .map(doc => ({
+//         id: doc.id,
+//         ...doc.data(),
+//         productRating: doc.data().productRating || 0
+//     }));
+
+export const fetchPopularItems = async () => {
+    try {
+        const foodItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));
+        const allItems = foodItemsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            productRating: doc.data().productRating || 0
+        }));
+        
+        // Sort by rating and return top 5
+        return allItems.sort((a, b) => b.productRating - a.productRating).slice(0, 5);
+    } catch (error) {
+        console.error('Error fetching popular items:', error);
+        throw error;
+    }
+};
+
+export const fetchHotelDetails = async (hotelId) => {
+    try {
+        const hotelDoc = await getDoc(doc(db, 'fs_hotels', hotelId));
+        if (hotelDoc.exists()) {
+            const hotelData = hotelDoc.data();
+            console.log('Hotel data:', hotelData); // Debug log
+            const menuItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));
+            const menuItems = menuItemsSnapshot.docs
+                .filter(doc => doc.data().productOwnership === hotelData.hotelUsername) // Changed from hotelName to hotelUsername
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    productRating: doc.data().productRating || 0
+                }));
+            console.log('Filtered menu items:', menuItems); // Debug log
+            return {
+                id: hotelDoc.id,
+                ...hotelData,
+                menuItems
+            };
+        } else {
+            throw new Error('Hotel not found');
+        }
+    } catch (error) {
+        console.error('Error fetching hotel details:', error);
+        throw error;
+    }
 };
 
 export const fetchHotels = async () => {
-    const hotelsSnapshot = await getDocs(collection(db, 'fs_hotels'));
-    return hotelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+	try {
+		const hotelsSnapshot = await getDocs(collection(db, 'fs_hotels'));
+		return hotelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+	} catch (error) {
+		console.error('Error fetching hotels:', error);
+		throw error;
+	}
+};
+
+export const fetchPopularItemsWithHotelInfo = async (userLocation) => {
+    try {
+        const foodItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));
+        const hotelsSnapshot = await getDocs(collection(db, 'fs_hotels'));
+
+        const hotels = hotelsSnapshot.docs.reduce((acc, doc) => {
+            const hotelData = doc.data();
+            if (hotelData.latitude && hotelData.longitude) {
+                acc[doc.id] = hotelData;
+            } else {
+                console.warn(`Hotel ${doc.id} is missing latitude or longitude`);
+            }
+            return acc;
+        }, {});
+
+        const allItems = foodItemsSnapshot.docs.map(doc => {
+            const itemData = doc.data();
+            const hotel = hotels[itemData.productOwnership];
+            let hotelDistance = null;
+            if (hotel && userLocation && userLocation.latitude && userLocation.longitude) {
+                hotelDistance = calculateDistance(
+                    userLocation,
+                    { latitude: hotel.latitude, longitude: hotel.longitude }
+                );
+            }
+            return {
+                id: doc.id,
+                ...itemData,
+                productRating: itemData.productRating || 0,
+                hotelName: hotel ? hotel.hotelName : 'Unknown Hotel',
+                hotelDistance: hotelDistance
+            };
+        });
+        
+        // Sort by rating and return top 6
+        return allItems.sort((a, b) => b.productRating - a.productRating).slice(0, 6);
+    } catch (error) {
+        console.error('Error fetching popular items with hotel info:', error);
+        throw error;
+    }
+};
+
+const calculateDistance = (userLocation, hotelLocation) => {
+    if (!userLocation || !hotelLocation) return null;
+    if (!userLocation.latitude || !userLocation.longitude || !hotelLocation.latitude || !hotelLocation.longitude) {
+        console.warn('Invalid coordinates for distance calculation');
+        return null;
+    }
+    return getDistance(
+        { latitude: userLocation.latitude, longitude: userLocation.longitude },
+        { latitude: hotelLocation.latitude, longitude: hotelLocation.longitude }
+    ) / 1000; // Convert meters to kilometers
+};
+
+
+export const fetchHotelsWithMenuItems = async (userLat, userLon) => {
+	try {
+		const hotelsSnapshot = await getDocs(collection(db, 'fs_hotels'));
+		const menuItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));
+
+		const hotels = hotelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+		const menuItems = menuItemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+		const hotelsWithItems = hotels.map(hotel => {
+			const hotelItems = menuItems.filter(item => item.productOwnership === hotel.hotelUsername);
+			let distance = null;
+			if (userLat && userLon) {
+				distance = getDistance(
+					{ latitude: userLat, longitude: userLon },
+					{ latitude: parseFloat(hotel.latitude), longitude: parseFloat(hotel.longitude) }
+				) / 1000; // Convert meters to kilometers
+			}
+			return {
+				...hotel,
+				distance,
+				menuItems: hotelItems
+			};
+		});
+
+		// Sort hotels by distance if user location is available
+		if (userLat && userLon) {
+			hotelsWithItems.sort((a, b) => a.distance - b.distance);
+		}
+
+		return hotelsWithItems;
+	} catch (error) {
+		console.error('Error fetching hotels with menu items:', error);
+		throw error;
+	}
 };
 
 export const fetchAllItems = async () => {
-    try {
-        const itemsCollection = collection(db, 'fs_food_items');
-        const itemsSnapshot = await getDocs(itemsCollection);
-        return itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-        console.error('Error fetching all items:', error);
-        throw error;
-    }
+	try {
+		const itemsCollection = collection(db, 'fs_food_items');
+		const itemsSnapshot = await getDocs(itemsCollection);
+		return itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+	} catch (error) {
+		console.error('Error fetching all items:', error);
+		throw error;
+	}
 };
 
 export const fetchAllMedicalItems = async () => {

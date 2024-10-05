@@ -6,6 +6,7 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import LandingPage from './components/LandingPage';
 import FoodOrderHome from './components/FoodOrderHome';
+import HotelPage from './components/HotelPage';
 import MedicareHome from './components/MedicareHome'; 
 import Cart from './components/Cart';
 import Profile from './components/Profile';
@@ -21,6 +22,7 @@ function App() {
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
                     <Route path="/" element={<PrivateRoute><LandingPage /></PrivateRoute>} />
+                    <Route path="/hotel/:id" element={<HotelPage />} />
                     <Route path="/food-order" element={<PrivateRoute><FoodOrderHome /></PrivateRoute>} />
                     <Route path="/medicare" element={<PrivateRoute><MedicareHome /></PrivateRoute>} /> {/* Add this line */}
                     <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />

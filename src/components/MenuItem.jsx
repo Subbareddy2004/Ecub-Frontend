@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { FaPlus, FaMinus } from 'react-icons/fa';
+import { FaPlus, FaMinus, FaStar } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
-const MenuItem = ({ item, addToCart }) => {
+const MenuItem = ({ item }) => {
     const [quantity, setQuantity] = useState(0);
+    const { addToCart } = useAuth();
 
     const handleAddToCart = () => {
         if (quantity > 0) {
@@ -12,21 +14,35 @@ const MenuItem = ({ item, addToCart }) => {
     };
 
     return (
-        <div className="menu-item">
-            <img src={item.image} alt={item.name} className="menu-item-image" />
-            <div className="menu-item-info">
-                <h4>{item.name}</h4>
-                <p>{item.description}</p>
-                <p className="price">₹{item.price}</p>
+        <div className="bg-white rounded-lg shadow-md p-4">
+            <img src={item.productImg} alt={item.productTitle} className="w-full h-48 object-cover rounded-t-lg" />
+            <h3 className="text-xl font-semibold mt-2">{item.productTitle}</h3>
+            <p className="text-sm text-gray-600">{item.productDesc}</p>
+            <div className="flex items-center mt-2">
+                <FaStar className="text-yellow-400 mr-1" />
+                <span>{item.productRating ? item.productRating.toFixed(1) : 'N/A'}</span>
             </div>
-            <div className="quantity-control">
-                <button onClick={() => setQuantity(Math.max(0, quantity - 1))}><FaMinus /></button>
-                <span>{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)}><FaPlus /></button>
+            <p className="text-lg font-bold mt-2">₹{item.productPrice}</p>
+            {item.isVeg && <span className="text-green-600">Veg</span>}
+            <p className="text-sm text-gray-600">Prep time: {item.productPrepTime}</p>
+            <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center">
+                    <button onClick={() => setQuantity(Math.max(0, quantity - 1))} className="bg-gray-200 px-2 py-1 rounded">
+                        <FaMinus />
+                    </button>
+                    <span className="mx-2">{quantity}</span>
+                    <button onClick={() => setQuantity(quantity + 1)} className="bg-gray-200 px-2 py-1 rounded">
+                        <FaPlus />
+                    </button>
+                </div>
+                <button
+                    onClick={handleAddToCart}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors duration-300"
+                    disabled={quantity === 0}
+                >
+                    Add to Cart
+                </button>
             </div>
-            <button onClick={handleAddToCart} className="add-to-cart" disabled={quantity === 0}>
-                Add to Cart
-            </button>
         </div>
     );
 };

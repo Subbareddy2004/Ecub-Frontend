@@ -4,13 +4,16 @@ import { FaUser, FaShoppingCart } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, cart } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
+
+    // Calculate total items in cart
+    const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
     return (
         <nav className="bg-[#004E89] p-4">
@@ -19,8 +22,13 @@ const Navbar = () => {
                 <div className="flex items-center">
                     {user ? (
                         <>
-                            <Link to="/cart" className="text-white mr-4">
+                            <Link to="/cart" className="text-white mr-4 relative">
                                 <FaShoppingCart size={20} />
+                                {cartItemCount > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                                        {cartItemCount}
+                                    </span>
+                                )}
                             </Link>
                             <Link to="/profile" className="text-white mr-4">
                                 <FaUser size={20} />

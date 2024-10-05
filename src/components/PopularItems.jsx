@@ -1,96 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { FaStar, FaMinus, FaPlus, FaLeaf } from 'react-icons/fa';
-import { useAuth } from '../contexts/AuthContext';
+import MenuItem from './MenuItem';
+import { fetchPopularItemsWithHotelInfo } from '../services/firebaseOperations';
 
-const MenuItem = ({ item }) => {
-    const [quantity, setQuantity] = useState(0);
-    const { addToCart } = useAuth();
-
-    const handleAdd = () => {
-        if (quantity > 0) {
-            addToCart(item, quantity);
-            setQuantity(0);
-        }
-    };
-
-    return (
-        <div className="bg-white rounded-lg shadow-md p-4 mb-4 flex flex-col md:flex-row">
-            <img src={item.productImg} alt={item.productTitle} className="w-full md:w-1/3 h-48 object-cover rounded-lg mb-4 md:mb-0 md:mr-4" />
-            <div className="flex-grow">
-                <h3 className="text-xl font-semibold mb-2">{item.productTitle}</h3>
-                <div className="flex items-center mb-2">
-                    <FaStar className="text-[#FF6B35] mr-1" />
-                    <span className="text-[#0f0f0f]">{item.productRating.toFixed(1)} ratings</span>
-                </div>
-                <p className="text-gray-600 mb-2">{item.productDesc}</p>
-                <div className="flex items-center mb-2">
-                    <span className="font-bold text-lg mr-2 text-[#111111]">₹{item.productPrice}</span>
-                    {item.productOffer > 0 && (
-                        <span className="text-sm text-gray-500 line-through">
-                            ₹{Math.round(item.productPrice / (1 - item.productOffer / 100))}
-                        </span>
-                    )}
-                </div>
-                <p className="text-sm text-gray-500 mb-2">Prep Time: {item.productPrepTime}</p>
-                <p className="flex items-center mb-4">
-                    {item.isVeg ? (
-                        <>
-                            <FaLeaf className="text-green-500 mr-1" />
-                            <span className="text-green-500">Veg</span>
-                        </>
-                    ) : (
-                        <span className="text-red-500">Non-Veg</span>
-                    )}
-                </p>
-                <div className="flex items-center">
-                    <div className="flex items-center mr-4">
-                        <button onClick={() => setQuantity(Math.max(0, quantity - 1))} className="bg-[#F7C59F] text-[#080808] px-2 py-1 rounded-l">
-                            <FaMinus />
-                        </button>
-                        <span className="bg-[#F7C59F] text-[#101010] px-4 py-1">{quantity}</span>
-                        <button onClick={() => setQuantity(quantity + 1)} className="bg-[#F7C59F] text-[#131414] px-2 py-1 rounded-r">
-                            <FaPlus />
-                        </button>
-                    </div>
-                    <button onClick={handleAdd} className="bg-[#FF6B35] text-white px-4 py-2 rounded hover:bg-[#F7C59F] hover:text-[#121212] transition duration-300" disabled={quantity === 0}>
-                        ADD
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const PopularItems = () => {
-    const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+const PopularItems = ({ userLocation }) => {
+    const [popularItems, setPopularItems] = useState([]);
 
     useEffect(() => {
-        const fetchPopularItems = async () => {
-            try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/popular-items`);
-                setItems(response.data);
-                setLoading(false);
-            } catch (err) {
-                console.error('Error fetching popular items:', err);
-                setError('Failed to fetch popular items');
-                setLoading(false);
+        const loadPopularItems = async () => {
+            if (userLocation && userLocation.latitude && userLocation.longitude) {
+                try {
+                    const items = await fetchPopularItemsWithHotelInfo(userLocation);
+                    setPopularItems(items);
+                } catch (error) {
+                    console.error('Error loading popular items:', error);
+                }
+            } else {
+                console.warn('User location is not available or incomplete');
             }
         };
-
-        fetchPopularItems();
-    }, []);
-
-    if (loading) return <div>Loading popular items...</div>;
-    if (error) return <div>Error: {error}</div>;
+        loadPopularItems();
+    }, [userLocation]);
 
     return (
-        <div className="popular-items">
-            {items.map(item => (
-                <MenuItem key={item.id} item={item} />
-            ))}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-bold mb-4">Popular Items</h2>
+            <div className="grid grid-cols-2 gap-4">
+                {popularItems.map(item => (
+                    <MenuItem 
+                        key={item.id} 
+                        item={item} 
+                        hotelName={item.hotelName}
+                        hotelDistance={item.hotelDistance}
+                        addToCart={(item, quantity) => {
+                            console.log(`Added ${quantity} of ${item.productTitle} to cart`);
+                        }}
+                    />
+                ))}
+            </div>
         </div>
     );
 };
