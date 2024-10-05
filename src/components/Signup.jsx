@@ -26,7 +26,7 @@ const Signup = () => {
         ...(isWorker && { workAddress }),
         isWorker
       };
-      const response = await axios.post(`https://${import.meta.env.VITE_API_URL}/api/signup`, userData);
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/signup`, userData);
       login(response.data);
       navigate('/');
     } catch (err) {
