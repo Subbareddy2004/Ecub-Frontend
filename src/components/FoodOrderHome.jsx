@@ -16,19 +16,20 @@ const FoodOrderHome = () => {
     });
 
     useEffect(() => {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setUserLocation({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude
-                });
-                fetchData(position.coords.latitude, position.coords.longitude);
-            },
-            (error) => {
-                console.error("Error getting location:", error);
-                fetchData();
-            }
-        );
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setUserLocation({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
+                    fetchData(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    console.error("Error getting user location:", error);
+                }
+            );
+        }
     }, []);
 
     const fetchData = async (lat, lon) => {
@@ -59,7 +60,7 @@ const FoodOrderHome = () => {
             <div className="flex flex-col lg:flex-row gap-8">
                 <div className="w-full lg:w-1/2 space-y-8">
                     <PopularItems userLocation={userLocation} />
-                    <ChatBot onRecommendations={handleRecommendations} addToCart={addToCart} />
+                    <ChatBot userLocation={userLocation} onRecommendations={handleRecommendations} addToCart={addToCart} />
                 </div>
                 <div className="w-full lg:w-1/2">
                     <h2 className="text-2xl font-bold mb-4">Nearby Restaurants</h2>

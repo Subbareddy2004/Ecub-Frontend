@@ -1,22 +1,40 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://fullstack-ecub-backend.vercel.app';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-export const sendMessage = async (message, mealType) => {
+export const sendMessage = async (message, mealType, userLocation) => {
     const response = await axios.post(`${API_BASE_URL}/api/chat`, {
         message,
-        mealType
+        mealType,
+        userLocation
     });
     return response.data;
 };
 
-export const getPersonalizedRecommendations = async (query, mealType) => {
+export const getPersonalizedRecommendations = async (query, mealType, userLocation) => {
     try {
-        const response = await sendMessage(query, mealType);
-        return response.recommendations;
+        const response = await axios.get(`${API_BASE_URL}/api/personalized-recommendations`, {
+            params: {
+                query,
+                mealType,
+                latitude: userLocation ? userLocation.latitude : null,
+                longitude: userLocation ? userLocation.longitude : null
+            }
+        });
+        if (response.data && Array.isArray(response.data)) {
+            return response.data.map(item => ({
+                ...item,
+                productRating: item.productRating || 0,
+                hotelName: item.hotelName || item.productOwnership || 'Unknown Hotel',
+                distance: typeof item.distance === 'number' ? Number(item.distance.toFixed(2)) : null
+            }));
+        } else {
+            console.error('Invalid recommendations format:', response.data);
+            return [];
+        }
     } catch (error) {
         console.error('Error getting personalized recommendations:', error);
-        throw error; // Propagate the error to be handled in the component
+        return [];
     }
 };
 

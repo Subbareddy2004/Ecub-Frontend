@@ -3,7 +3,7 @@ import { FaComments, FaTimes, FaPaperPlane, FaStar, FaPlus, FaSpinner, FaMapMark
 import { getPersonalizedRecommendations } from '../services/api';
 import { useAuth } from '../contexts/AuthContext'; // Add this import
 
-const ChatBot = ({ onRecommendations, addToCart }) => {
+const ChatBot = ({ onRecommendations, addToCart, userLocation }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -53,7 +53,7 @@ const ChatBot = ({ onRecommendations, addToCart }) => {
         setIsSearching(true);
 
         try {
-            const recs = await getPersonalizedRecommendations(input, mealType);
+            const recs = await getPersonalizedRecommendations(input, mealType, userLocation);
             setRecommendations(recs);
             onRecommendations(recs);
             
@@ -85,12 +85,13 @@ const ChatBot = ({ onRecommendations, addToCart }) => {
                 <p className="text-sm text-gray-600">₹{item.productPrice}</p>
                 <div className="flex items-center">
                     <FaStar className="text-yellow-400 mr-1" />
-                    <span className="text-sm">{item.productRating.toFixed(1)}</span>
+                    <span className="text-sm">{item.productRating ? item.productRating.toFixed(1) : 'N/A'}</span>
                 </div>
-                {item.distance && (
+                <p className="text-sm text-gray-600">{item.hotelName || item.productOwnership || 'Unknown Hotel'}</p>
+                {item.distance !== null && item.distance !== undefined && (
                     <p className="text-sm text-gray-600">
                         <FaMapMarkerAlt className="inline mr-1" />
-                        {item.distance.toFixed(2)} km away
+                        {`${item.distance.toFixed(2)} km away`}
                     </p>
                 )}
             </div>
