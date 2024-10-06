@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MenuItem from './MenuItem';
+import PersonalizedRecommendations from './PersonalizedRecommendations';
 import { fetchPopularItemsWithHotelInfo } from '../services/firebaseOperations';
 import { FaFilter, FaStar } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
@@ -43,6 +44,8 @@ const PopularItems = ({ userLocation }) => {
 
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
+            <PersonalizedRecommendations />
+            
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold">Popular Items</h2>
                 <Link to="/all-menu" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">

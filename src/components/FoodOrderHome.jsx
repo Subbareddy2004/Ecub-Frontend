@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Joyride, { STATUS } from 'react-joyride';
 import { Link } from 'react-router-dom';
 import { fetchHotelsWithMenuItems } from '../services/firebaseOperations';
 import PopularItems from './PopularItems';
@@ -14,6 +15,7 @@ const FoodOrderHome = () => {
             console.log(`Added ${quantity} of ${item.productTitle} to cart`);
         };
     });
+    const [runTour, setRunTour] = useState(true);
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -47,6 +49,29 @@ const FoodOrderHome = () => {
         console.log('Received recommendations in FoodOrderHome:', recs);
     };
 
+    const steps = [
+        {
+            target: '.popular-items',
+            content: 'Check out our most popular food items!',
+            disableBeacon: true,
+        },
+        {
+            target: '.nearby-restaurants',
+            content: 'Browse restaurants near you',
+        },
+        {
+            target: '.chatbot-button',
+            content: 'Need help? Use our AI-powered chatbot for personalized recommendations!',
+        },
+    ];
+
+    const handleJoyrideCallback = (data) => {
+        const { status } = data;
+        if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+            setRunTour(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -57,12 +82,27 @@ const FoodOrderHome = () => {
 
     return (
         <div className="container mx-auto px-4 py-8">
+            <Joyride
+                steps={steps}
+                run={runTour}
+                continuous={true}
+                showSkipButton={true}
+                showProgress={true}
+                styles={{
+                    options: {
+                        primaryColor: '#FF6B35',
+                    },
+                }}
+                callback={handleJoyrideCallback}
+            />
             <div className="flex flex-col lg:flex-row gap-8">
                 <div className="w-full lg:w-1/2 space-y-8">
-                    <PopularItems userLocation={userLocation} />
+                    <div className="popular-items">
+                        <PopularItems userLocation={userLocation} />
+                    </div>
                     <ChatBot userLocation={userLocation} onRecommendations={handleRecommendations} addToCart={addToCart} />
                 </div>
-                <div className="w-full lg:w-1/2">
+                <div className="w-full lg:w-1/2 nearby-restaurants">
                     <h2 className="text-2xl font-bold mb-4">Nearby Restaurants</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {hotels.map(hotel => (

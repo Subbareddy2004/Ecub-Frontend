@@ -113,7 +113,7 @@ const ChatBot = ({ onRecommendations, addToCart, userLocation }) => {
         <div className={`fixed bottom-4 right-4 z-50 ${isOpen ? 'w-96' : 'w-auto'}`}>
             {!isOpen && (
                 <button 
-                    className="bg-[#FF6B35] text-white p-4 rounded-full shadow-lg hover:bg-[#F7C59F] hover:text-[#004E89] transition duration-300"
+                    className="chatbot-button bg-[#FF6B35] text-white p-4 rounded-full shadow-lg hover:bg-[#F7C59F] hover:text-[#004E89] transition duration-300"
                     onClick={toggleChat}
                 >
                     <FaComments size={28} />
