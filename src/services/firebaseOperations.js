@@ -79,6 +79,54 @@ export const fetchHotels = async () => {
 	}
 };
 
+export const fetchMenuCategories = async () => {
+    try {
+        const foodItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));
+        const foodItems = foodItemsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Group items by category
+        const categoriesMap = foodItems.reduce((acc, item) => {
+            if (!acc[item.productMainCategory]) {
+                acc[item.productMainCategory] = {
+                    name: item.productMainCategory,
+                    items: [],
+                    imageUrl: item.productImg // Use the first item's image as category image
+                };
+            }
+            acc[item.productMainCategory].items.push(item);
+            return acc;
+        }, {});
+
+        // Convert map to array
+        const categories = Object.values(categoriesMap);
+
+        return categories;
+    } catch (error) {
+        console.error('Error fetching menu categories:', error);
+        throw error;
+    }
+};
+
+export const fetchItemsByCategory = async (categoryName) => {
+    try {
+        const foodItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));
+        const categoryItems = foodItemsSnapshot.docs
+            .filter(doc => doc.data().productMainCategory.toLowerCase() === categoryName.toLowerCase())
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                productRating: doc.data().productRating || 0
+            }));
+        return categoryItems;
+    } catch (error) {
+        console.error('Error fetching items by category:', error);
+        throw error;
+    }
+};
+
 export const fetchPopularItemsWithHotelInfo = async (userLocation) => {
     try {
         const foodItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));

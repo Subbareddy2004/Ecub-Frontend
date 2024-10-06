@@ -11,6 +11,7 @@ import MedicareHome from './components/MedicareHome';
 import PopularItems from './components/PopularItems';
 import AllItems from './components/AllItems';
 import Cart from './components/Cart';
+import CategoryItems from './components/CategoryItems';
 import Profile from './components/Profile';
 import PrivateRoute from './components/PrivateRoute';
 
@@ -31,6 +32,7 @@ function App() {
                     <Route path="/food-order" element={<PrivateRoute><FoodOrderHome /></PrivateRoute>} />
                     <Route path="/medicare" element={<PrivateRoute><MedicareHome /></PrivateRoute>} /> {/* Add this line */}
                     <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
+                    <Route path="/category/:categoryName" element={<PrivateRoute><CategoryItems /></PrivateRoute>} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </Router>
