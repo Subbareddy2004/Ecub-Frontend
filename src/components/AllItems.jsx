@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaStar, FaLeaf, FaFilter, FaSpinner } from 'react-icons/fa';
+import { Link } from 'react-router-dom'; // Add this import
+import { FaStar, FaLeaf, FaFilter, FaSpinner, FaArrowLeft } from 'react-icons/fa'; // Add FaArrowLeft
 import { fetchAllItems } from '../services/firebaseOperations';
-import { useAuth } from '../contexts/AuthContext'; // Add this import
+import { useAuth } from '../contexts/AuthContext';
+import MenuItem from './MenuItem';
 
 const AllItems = () => {
     const [items, setItems] = useState([]);
@@ -12,13 +14,14 @@ const AllItems = () => {
         priceRange: [0, 1000],
         rating: 0
     });
-    const { addToCart } = useAuth(); // Add this line to get addToCart function
+    const { userLocation } = useAuth(); // Assuming you have user location in AuthContext
 
     useEffect(() => {
         const loadItems = async () => {
             setIsLoading(true);
             try {
-                const itemsData = await fetchAllItems();
+                // Pass null for userLocation if it's not available
+                const itemsData = await fetchAllItems(userLocation || null);
                 setItems(itemsData);
                 setFilteredItems(itemsData);
             } catch (error) {
@@ -27,8 +30,9 @@ const AllItems = () => {
                 setIsLoading(false);
             }
         };
+
         loadItems();
-    }, []);
+    }, [userLocation]);
 
     useEffect(() => {
         const filtered = items.filter(item => 
@@ -44,19 +48,21 @@ const AllItems = () => {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    const handleAddToCart = (item) => {
-        addToCart(item, 1); // Add 1 quantity of the item to the cart
-    };
-
     if (isLoading) {
-        return <div className="flex justify-center items-center h-64">
-            <FaSpinner className="animate-spin text-4xl text-[#FF6B35]" />
-        </div>;
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <FaSpinner className="animate-spin text-4xl text-blue-600" />
+            </div>
+        );
     }
 
     return (
         <div className="container mx-auto px-4 py-8">
-            
+            {/* Add the back link here */}
+            <Link to="/food-order" className="flex items-center text-blue-600 mb-4">
+                <FaArrowLeft className="mr-2" /> Back to Restaurants
+            </Link>
+
             <div className="mb-8 bg-white p-4 rounded-lg shadow">
                 <h2 className="text-xl font-semibold mb-4 flex items-center">
                     <FaFilter className="mr-2 text-[#FF6B35]" /> Filters
@@ -105,25 +111,12 @@ const AllItems = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredItems.map(item => (
-                    <div key={item.id} className="bg-white rounded-lg shadow-md p-6">
-                        <img src={item.productImg} alt={item.productTitle} className="w-full h-48 object-cover rounded-t-lg" />
-                        <h3 className="text-xl font-semibold mt-4">{item.productTitle}</h3>
-                        <p className="text-gray-600 mt-2">{item.productDesc}</p>
-                        <div className="flex items-center mt-2">
-                            <FaStar className="text-yellow-400 mr-1" />
-                            <span>{item.productRating.toFixed(1)}</span>
-                        </div>
-                        <p className="text-lg font-bold mt-2">₹{item.productPrice}</p>
-                        {item.isVeg && <FaLeaf className="text-green-500 mt-2" />}
-                        <button 
-                            onClick={() => handleAddToCart(item)}
-                            className="w-full bg-[#FF6B35] text-white px-4 py-2 rounded hover:bg-[#F7C59F] hover:text-[#004E89] transition duration-300 mt-4"
-                        >
-                            Add to Cart
-                        </button>
-                    </div>
+                    <MenuItem key={item.id} item={item} />
                 ))}
             </div>
+            {filteredItems.length === 0 && (
+                <p className="text-center text-gray-600 mt-4">No items match the current filters.</p>
+            )}
         </div>
     );
 };

@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import MenuItem from './MenuItem';
 import { fetchPopularItemsWithHotelInfo } from '../services/firebaseOperations';
+import { FaFilter, FaStar } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
 const PopularItems = ({ userLocation }) => {
     const [popularItems, setPopularItems] = useState([]);
+    const [filteredItems, setFilteredItems] = useState([]);
+    const [filters, setFilters] = useState({
+        veg: false,
+        priceRange: [0, 1000],
+        rating: 0
+    });
 
     useEffect(() => {
         const loadPopularItems = async () => {
@@ -11,6 +19,7 @@ const PopularItems = ({ userLocation }) => {
                 try {
                     const items = await fetchPopularItemsWithHotelInfo(userLocation);
                     setPopularItems(items);
+                    setFilteredItems(items);
                 } catch (error) {
                     console.error('Error loading popular items:', error);
                 }
@@ -21,22 +30,91 @@ const PopularItems = ({ userLocation }) => {
         loadPopularItems();
     }, [userLocation]);
 
+    useEffect(() => {
+        const filtered = popularItems.filter(item => 
+            (!filters.veg || item.isVeg) &&
+            item.productPrice >= filters.priceRange[0] &&
+            item.productPrice <= filters.priceRange[1] &&
+            item.productRating >= filters.rating
+        );
+        setFilteredItems(filtered);
+    }, [filters, popularItems]);
+
+    const handleFilterChange = (key, value) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
+
     return (
         <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold mb-4">Popular Items</h2>
-            <div className="grid grid-cols-2 gap-4">
-                {popularItems.map(item => (
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Popular Items</h2>
+                <Link to="/all-menu" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">
+                    All Menu
+                </Link>
+            </div>
+            
+            <div className="mb-4 bg-gray-100 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-2 flex items-center">
+                    <FaFilter className="mr-2 text-blue-500" /> Filters
+                </h3>
+                <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center">
+                        <input
+                            type="checkbox"
+                            checked={filters.veg}
+                            onChange={(e) => handleFilterChange('veg', e.target.checked)}
+                            className="mr-2"
+                        />
+                        Vegetarian Only
+                    </label>
+                    <div>
+                        <label className="block mb-1">Price Range</label>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1000"
+                            step="10"
+                            value={filters.priceRange[1]}
+                            onChange={(e) => handleFilterChange('priceRange', [0, parseInt(e.target.value)])}
+                            className="w-full"
+                        />
+                        <div className="flex justify-between text-sm text-gray-600">
+                            <span>₹0</span>
+                            <span>₹{filters.priceRange[1]}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block mb-1">Minimum Rating</label>
+                        <div className="flex items-center">
+                            <input
+                                type="range"
+                                min="0"
+                                max="5"
+                                step="0.5"
+                                value={filters.rating}
+                                onChange={(e) => handleFilterChange('rating', parseFloat(e.target.value))}
+                                className="w-24 mr-2"
+                            />
+                            <span className="flex items-center">
+                                <FaStar className="text-yellow-400 mr-1" />
+                                {filters.rating.toFixed(1)}+
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredItems.map(item => (
                     <MenuItem 
                         key={item.id} 
                         item={item} 
-                        hotelName={item.hotelName}
-                        hotelDistance={item.hotelDistance}
-                        addToCart={(item, quantity) => {
-                            console.log(`Added ${quantity} of ${item.productTitle} to cart`);
-                        }}
                     />
                 ))}
             </div>
+            {filteredItems.length === 0 && (
+                <p className="text-center text-gray-600 mt-4">No items match the current filters.</p>
+            )}
         </div>
     );
 };

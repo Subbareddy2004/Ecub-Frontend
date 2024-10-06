@@ -8,9 +8,12 @@ import LandingPage from './components/LandingPage';
 import FoodOrderHome from './components/FoodOrderHome';
 import HotelPage from './components/HotelPage';
 import MedicareHome from './components/MedicareHome'; 
+import PopularItems from './components/PopularItems';
+import AllItems from './components/AllItems';
 import Cart from './components/Cart';
 import Profile from './components/Profile';
 import PrivateRoute from './components/PrivateRoute';
+
 
 function App() {
     return (
@@ -23,6 +26,8 @@ function App() {
                     <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
                     <Route path="/" element={<PrivateRoute><LandingPage /></PrivateRoute>} />
                     <Route path="/hotel/:id" element={<HotelPage />} />
+                    <Route path="/popular-items" element={<PrivateRoute><PopularItems /></PrivateRoute>} />
+                    <Route path="/all-menu" element={<PrivateRoute><AllItems /></PrivateRoute>} />
                     <Route path="/food-order" element={<PrivateRoute><FoodOrderHome /></PrivateRoute>} />
                     <Route path="/medicare" element={<PrivateRoute><MedicareHome /></PrivateRoute>} /> {/* Add this line */}
                     <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />

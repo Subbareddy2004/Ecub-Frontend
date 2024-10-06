@@ -9,42 +9,56 @@ const FoodOrderHome = () => {
     const [hotels, setHotels] = useState([]);
     const [userLocation, setUserLocation] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [addToCart] = useState(() => {
-        return (item, quantity) => {
-            console.log(`Added ${quantity} of ${item.productTitle} to cart`);
-        };
-    });
+    const [error, setError] = useState(null);
+    const [recommendations, setRecommendations] = useState([]); // Add this line
 
     useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setUserLocation({
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
-                    });
-                    fetchData(position.coords.latitude, position.coords.longitude);
-                },
-                (error) => {
-                    console.error("Error getting user location:", error);
+        const getUserLocationAndFetchData = async () => {
+            try {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        async (position) => {
+                            const userLoc = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            };
+                            setUserLocation(userLoc);
+                            await fetchData(userLoc);
+                        },
+                        async (error) => {
+                            console.error("Error getting user location:", error);
+                            await fetchData(null);
+                        }
+                    );
+                } else {
+                    await fetchData(null);
                 }
-            );
-        }
+            } catch (error) {
+                console.error("Error in getUserLocationAndFetchData:", error);
+                setError("Failed to load data. Please try again.");
+                setIsLoading(false);
+            }
+        };
+
+        getUserLocationAndFetchData();
     }, []);
 
-    const fetchData = async (lat, lon) => {
+    const fetchData = async (userLoc) => {
         try {
-            const hotelsData = await fetchHotelsWithMenuItems(lat, lon);
+            setIsLoading(true);
+            const hotelsData = await fetchHotelsWithMenuItems(userLoc);
             setHotels(hotelsData);
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error('Error fetching data:', error);
+            setError("Failed to load hotels. Please try again.");
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleRecommendations = (recs) => {
-        console.log('Received recommendations in FoodOrderHome:', recs);
+    // Add this function
+    const handleRecommendations = (newRecommendations) => {
+        setRecommendations(newRecommendations);
     };
 
     if (isLoading) {
@@ -55,12 +69,27 @@ const FoodOrderHome = () => {
         );
     }
 
+    if (error) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <p className="text-red-500">{error}</p>
+            </div>
+        );
+    }
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col lg:flex-row gap-8">
                 <div className="w-full lg:w-1/2 space-y-8">
                     <PopularItems userLocation={userLocation} />
-                    <ChatBot userLocation={userLocation} onRecommendations={handleRecommendations} addToCart={addToCart} />
+                    <ChatBot 
+                        onRecommendations={handleRecommendations} 
+                        addToCart={(item, quantity) => {
+                            console.log(`Added ${quantity} of ${item.productTitle} to cart`);
+                            // Implement your addToCart logic here
+                        }}
+                        userLocation={userLocation}
+                    />
                 </div>
                 <div className="w-full lg:w-1/2">
                     <h2 className="text-2xl font-bold mb-4">Nearby Restaurants</h2>
