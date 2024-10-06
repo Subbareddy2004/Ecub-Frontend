@@ -19,7 +19,7 @@ const MenuItem = ({ item }) => {
             <div className="p-4">
                 <div className="flex justify-between items-start mb-1">
                     <h3 className="text-lg font-semibold">{item.productTitle}</h3>
-                    <div className="flex items-center bg-green-100 px-2 py-1 rounded text-sm">
+                    <div className="flex items-center bg-green-100 px-1 py-1 rounded text-sm">
                         <FaStar className="text-yellow-400 mr-1" />
                         <span className="font-semibold">{item.productRating ? item.productRating.toFixed(1) : 'N/A'}</span>
                     </div>
