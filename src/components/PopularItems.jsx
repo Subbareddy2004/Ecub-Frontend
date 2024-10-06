@@ -9,13 +9,13 @@ const PopularItems = ({ userLocation }) => {
     const [filteredItems, setFilteredItems] = useState([]);
     const [filters, setFilters] = useState({
         veg: false,
-        priceRange: [0, 1000],
+        priceRange: 1000,
         rating: 0
     });
 
     useEffect(() => {
         const loadPopularItems = async () => {
-            if (userLocation && userLocation.latitude && userLocation.longitude) {
+            if (userLocation?.latitude && userLocation?.longitude) {
                 try {
                     const items = await fetchPopularItemsWithHotelInfo(userLocation);
                     setPopularItems(items);
@@ -23,8 +23,6 @@ const PopularItems = ({ userLocation }) => {
                 } catch (error) {
                     console.error('Error loading popular items:', error);
                 }
-            } else {
-                console.warn('User location is not available or incomplete');
             }
         };
         loadPopularItems();
@@ -33,8 +31,7 @@ const PopularItems = ({ userLocation }) => {
     useEffect(() => {
         const filtered = popularItems.filter(item => 
             (!filters.veg || item.isVeg) &&
-            item.productPrice >= filters.priceRange[0] &&
-            item.productPrice <= filters.priceRange[1] &&
+            item.productPrice <= filters.priceRange &&
             item.productRating >= filters.rating
         );
         setFilteredItems(filtered);
@@ -45,7 +42,7 @@ const PopularItems = ({ userLocation }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold">Popular Items</h2>
                 <Link to="/all-menu" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">
@@ -53,7 +50,7 @@ const PopularItems = ({ userLocation }) => {
                 </Link>
             </div>
             
-            <div className="mb-4 bg-gray-100 p-4 rounded-lg">
+            <div className="mb-6 bg-gray-100 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2 flex items-center">
                     <FaFilter className="mr-2 text-blue-500" /> Filters
                 </h3>
@@ -67,20 +64,20 @@ const PopularItems = ({ userLocation }) => {
                         />
                         Vegetarian Only
                     </label>
-                    <div>
+                    <div className="flex-1">
                         <label className="block mb-1">Price Range</label>
                         <input
                             type="range"
                             min="0"
                             max="1000"
                             step="10"
-                            value={filters.priceRange[1]}
-                            onChange={(e) => handleFilterChange('priceRange', [0, parseInt(e.target.value)])}
+                            value={filters.priceRange}
+                            onChange={(e) => handleFilterChange('priceRange', parseInt(e.target.value))}
                             className="w-full"
                         />
                         <div className="flex justify-between text-sm text-gray-600">
                             <span>₹0</span>
-                            <span>₹{filters.priceRange[1]}</span>
+                            <span>₹{filters.priceRange}</span>
                         </div>
                     </div>
                     <div>
@@ -104,7 +101,7 @@ const PopularItems = ({ userLocation }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {filteredItems.map(item => (
                     <MenuItem 
                         key={item.id} 

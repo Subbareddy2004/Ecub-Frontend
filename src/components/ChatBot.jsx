@@ -32,12 +32,11 @@ const ChatBot = ({ onRecommendations, addToCart, userLocation }) => {
         setIsLoading(true);
         setIsSearching(true);
         try {
-            // Pass an empty query and the selected meal type
-            const recs = await getPersonalizedRecommendations('', type, userLocation);
-            // Filter recommendations based on the selected meal type
-            const filteredRecs = recs.filter(item => item.foodAvailTime && item.foodAvailTime.toLowerCase() === type.toLowerCase());
-            setRecommendations(filteredRecs);
-            onRecommendations(filteredRecs);
+            // Add a timestamp to force a new request each time
+            const timestamp = new Date().getTime();
+            const recs = await getPersonalizedRecommendations('', type, userLocation, timestamp);
+            setRecommendations(recs);
+            onRecommendations(recs);
         } catch (error) {
             console.error('Error fetching recommendations:', error);
             setMessages(prev => [...prev, { text: "Sorry, I couldn't fetch recommendations at the moment. Please try again.", sender: 'bot' }]);

@@ -11,14 +11,15 @@ export const sendMessage = async (message, mealType, userLocation) => {
     return response.data;
 };
 
-export const getPersonalizedRecommendations = async (query, mealType, userLocation) => {
+export const getPersonalizedRecommendations = async (query, mealType, userLocation, timestamp) => {
     try {
         const response = await axios.get(`${API_BASE_URL}/api/personalized-recommendations`, {
             params: {
                 query,
                 mealType,
                 latitude: userLocation ? userLocation.latitude : null,
-                longitude: userLocation ? userLocation.longitude : null
+                longitude: userLocation ? userLocation.longitude : null,
+                timestamp // Add this line
             }
         });
         if (response.data && Array.isArray(response.data)) {

@@ -9,56 +9,42 @@ const FoodOrderHome = () => {
     const [hotels, setHotels] = useState([]);
     const [userLocation, setUserLocation] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [recommendations, setRecommendations] = useState([]); // Add this line
+    const [addToCart] = useState(() => {
+        return (item, quantity) => {
+            console.log(`Added ${quantity} of ${item.productTitle} to cart`);
+        };
+    });
 
     useEffect(() => {
-        const getUserLocationAndFetchData = async () => {
-            try {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        async (position) => {
-                            const userLoc = {
-                                latitude: position.coords.latitude,
-                                longitude: position.coords.longitude
-                            };
-                            setUserLocation(userLoc);
-                            await fetchData(userLoc);
-                        },
-                        async (error) => {
-                            console.error("Error getting user location:", error);
-                            await fetchData(null);
-                        }
-                    );
-                } else {
-                    await fetchData(null);
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setUserLocation({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
+                    fetchData(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    console.error("Error getting user location:", error);
                 }
-            } catch (error) {
-                console.error("Error in getUserLocationAndFetchData:", error);
-                setError("Failed to load data. Please try again.");
-                setIsLoading(false);
-            }
-        };
-
-        getUserLocationAndFetchData();
+            );
+        }
     }, []);
 
-    const fetchData = async (userLoc) => {
+    const fetchData = async (lat, lon) => {
         try {
-            setIsLoading(true);
-            const hotelsData = await fetchHotelsWithMenuItems(userLoc);
+            const hotelsData = await fetchHotelsWithMenuItems(lat, lon);
             setHotels(hotelsData);
         } catch (error) {
-            console.error('Error fetching data:', error);
-            setError("Failed to load hotels. Please try again.");
+            console.error("Error fetching data:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Add this function
-    const handleRecommendations = (newRecommendations) => {
-        setRecommendations(newRecommendations);
+    const handleRecommendations = (recs) => {
+        console.log('Received recommendations in FoodOrderHome:', recs);
     };
 
     if (isLoading) {
@@ -69,57 +55,43 @@ const FoodOrderHome = () => {
         );
     }
 
-    if (error) {
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <p className="text-red-500">{error}</p>
-            </div>
-        );
-    }
-
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col lg:flex-row gap-8">
                 <div className="w-full lg:w-1/2 space-y-8">
                     <PopularItems userLocation={userLocation} />
-                    <ChatBot 
-                        onRecommendations={handleRecommendations} 
-                        addToCart={(item, quantity) => {
-                            console.log(`Added ${quantity} of ${item.productTitle} to cart`);
-                            // Implement your addToCart logic here
-                        }}
-                        userLocation={userLocation}
-                    />
+                    <ChatBot userLocation={userLocation} onRecommendations={handleRecommendations} addToCart={addToCart} />
                 </div>
                 <div className="w-full lg:w-1/2">
                     <h2 className="text-2xl font-bold mb-4">Nearby Restaurants</h2>
-                    {hotels.map(hotel => (
-                        <Link to={`/hotel/${hotel.id}`} key={hotel.id} className="mb-4 bg-white rounded-lg shadow-lg p-6 block hover:bg-gray-50">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-xl font-bold">{hotel.hotelName}</h3>
-                                {hotel.distance !== null && hotel.distance !== undefined && (
-                                    <span className="text-sm text-gray-600 flex items-center">
-                                        <FaMapMarkerAlt className="mr-1" />
-                                        {typeof hotel.distance === 'number' 
-                                            ? `${hotel.distance.toFixed(2)} km away`
-                                            : 'Distance unavailable'}
-                                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {hotels.map(hotel => (
+                            <Link to={`/hotel/${hotel.id}`} key={hotel.id} className="bg-white rounded-lg shadow-lg p-4 block hover:bg-gray-50 transition duration-300">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-lg font-semibold truncate">{hotel.hotelName}</h3>
+                                    {hotel.distance !== null && hotel.distance !== undefined && (
+                                        <span className="text-sm text-gray-600 flex items-center bg-gray-100 px-2 py-1 rounded-full">
+                                            <FaMapMarkerAlt className="mr-1" />
+                                            {typeof hotel.distance === 'number' 
+                                                ? `${hotel.distance.toFixed(1)} km`
+                                                : 'N/A'}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center text-sm text-gray-600 mb-2">
+                                    {hotel.hotelType === 'restaurant' ? (
+                                        <FaUtensils className="text-blue-500 mr-2" />
+                                    ) : (
+                                        <FaHome className="text-green-500 mr-2" />
+                                    )}
+                                    <span className="capitalize">{hotel.hotelType}</span>
+                                </div>
+                                {hotel.hotelAddress && (
+                                    <p className="text-sm text-gray-600 truncate">{hotel.hotelAddress}</p>
                                 )}
-                            </div>
-                            <p className="text-gray-600 mt-2">{hotel.hotelType}</p>
-                            <div className="flex items-center mt-2">
-                                {hotel.hotelType === 'restaurant' ? (
-                                    <FaUtensils className="text-gray-500 mr-2" />
-                                ) : (
-                                    <FaHome className="text-gray-500 mr-2" />
-                                )}
-                                <span>{hotel.hotelType === 'restaurant' ? 'Restaurant' : 'Homemade'}</span>
-                            </div>
-                            {hotel.hotelAddress && (
-                                <p className="text-gray-600 mt-2">{hotel.hotelAddress}</p>
-                            )}
-                        </Link>
-                    ))}
+                            </Link>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

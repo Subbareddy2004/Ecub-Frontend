@@ -1,5 +1,5 @@
 import { db, collection, getDocs, doc, getDoc } from './firebase';
-import { calculateDistance } from '../utils/distanceCalculator';
+import { getDistance } from 'geolib';
 
 export const fetchMenuItems = async () => {
 	try {
@@ -33,7 +33,7 @@ export const fetchPopularItems = async () => {
         }));
         
         // Sort by rating and return top 5
-        return allItems.sort((a, b) => b.productRating - a.productRating).slice(0, 10);
+        return allItems.sort((a, b) => b.productRating - a.productRating).slice(0, 5);
     } catch (error) {
         console.error('Error fetching popular items:', error);
         throw error;
@@ -121,6 +121,18 @@ export const fetchPopularItemsWithHotelInfo = async (userLocation) => {
     }
 };
 
+const calculateDistance = (userLocation, hotelLocation) => {
+    if (!userLocation || !hotelLocation) return null;
+    if (!userLocation.latitude || !userLocation.longitude || !hotelLocation.latitude || !hotelLocation.longitude) {
+        console.warn('Invalid coordinates for distance calculation');
+        return null;
+    }
+    return getDistance(
+        { latitude: userLocation.latitude, longitude: userLocation.longitude },
+        { latitude: hotelLocation.latitude, longitude: hotelLocation.longitude }
+    ) / 1000; // Convert meters to kilometers
+};
+
 
 export const fetchHotelsWithMenuItems = async (userLat, userLon) => {
 	try {
@@ -158,49 +170,15 @@ export const fetchHotelsWithMenuItems = async (userLat, userLon) => {
 	}
 };
 
-export const fetchAllItems = async (userLocation) => {
-    try {
-        const itemsCollection = collection(db, 'fs_food_items1');
-        const hotelsCollection = collection(db, 'fs_hotels');
-        
-        const [itemsSnapshot, hotelsSnapshot] = await Promise.all([
-            getDocs(itemsCollection),
-            getDocs(hotelsCollection)
-        ]);
-
-        const hotels = hotelsSnapshot.docs.reduce((acc, doc) => {
-            const hotelData = doc.data();
-            acc[doc.id] = {
-                ...hotelData,
-                latitude: parseFloat(hotelData.latitude),
-                longitude: parseFloat(hotelData.longitude)
-            };
-            return acc;
-        }, {});
-
-        return itemsSnapshot.docs.map(doc => {
-            const itemData = doc.data();
-            const hotel = hotels[itemData.productOwnership];
-            let hotelDistance = null;
-
-            if (hotel && userLocation && userLocation.latitude && userLocation.longitude) {
-                hotelDistance = calculateDistance(
-                    userLocation,
-                    { latitude: hotel.latitude, longitude: hotel.longitude }
-                );
-            }
-
-            return {
-                id: doc.id,
-                ...itemData,
-                hotelName: hotel ? hotel.hotelName : 'Unknown Hotel',
-                hotelDistance: hotelDistance !== null ? Number(hotelDistance.toFixed(3)) : null
-            };
-        });
-    } catch (error) {
-        console.error('Error fetching all items:', error);
-        throw error;
-    }
+export const fetchAllItems = async () => {
+	try {
+		const itemsCollection = collection(db, 'fs_food_items');
+		const itemsSnapshot = await getDocs(itemsCollection);
+		return itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+	} catch (error) {
+		console.error('Error fetching all items:', error);
+		throw error;
+	}
 };
 
 export const fetchAllMedicalItems = async () => {
