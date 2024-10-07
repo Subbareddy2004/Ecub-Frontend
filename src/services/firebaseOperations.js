@@ -110,6 +110,23 @@ export const fetchMenuCategories = async () => {
     }
 };
 
+export const fetchLastOrder = async (userId) => {
+    try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, where('userId', '==', userId), orderBy('orderDate', 'desc'), limit(1));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            const lastOrder = querySnapshot.docs[0].data();
+            return { itemId: lastOrder.itemId, orderDate: lastOrder.orderDate };
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching last order:', error);
+        return null;
+    }
+};
+
 export const fetchItemsByCategory = async (categoryName) => {
     try {
         const foodItemsSnapshot = await getDocs(collection(db, 'fs_food_items1'));
@@ -220,7 +237,7 @@ export const fetchHotelsWithMenuItems = async (userLat, userLon) => {
 
 export const fetchAllItems = async () => {
 	try {
-		const itemsCollection = collection(db, 'fs_food_items');
+		const itemsCollection = collection(db, 'fs_food_items1');
 		const itemsSnapshot = await getDocs(itemsCollection);
 		return itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 	} catch (error) {

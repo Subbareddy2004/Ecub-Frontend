@@ -11,6 +11,17 @@ export const sendMessage = async (message, mealType, userLocation) => {
     return response.data;
 };
 
+// Add this function to the existing api.js file
+export const addToCart = async (itemId, quantity) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/cart/add`, { itemId, quantity });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      throw error;
+    }
+  };
+
 export const getPersonalizedRecommendations = async (query, mealType, userLocation, timestamp) => {
     try {
         const response = await axios.get(`${API_BASE_URL}/api/personalized-recommendations`, {

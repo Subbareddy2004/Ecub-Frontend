@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import MenuItem from './MenuItem';
 import PersonalizedRecommendations from './PersonalizedRecommendations';
-import { fetchPopularItemsWithHotelInfo } from '../services/firebaseOperations';
+import { fetchPopularItemsWithHotelInfo, fetchLastOrder } from '../services/firebaseOperations';
 import { FaFilter, FaStar } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const PopularItems = ({ userLocation }) => {
     const [popularItems, setPopularItems] = useState([]);
     const [filteredItems, setFilteredItems] = useState([]);
+    const [lastOrderItem, setLastOrderItem] = useState(null);
+    const { currentUser } = useAuth();
     const [filters, setFilters] = useState({
         veg: false,
         priceRange: 1000,
@@ -21,13 +24,19 @@ const PopularItems = ({ userLocation }) => {
                     const items = await fetchPopularItemsWithHotelInfo(userLocation);
                     setPopularItems(items);
                     setFilteredItems(items);
+                    if (currentUser) {
+                        const lastOrder = await fetchLastOrder(currentUser.uid);
+                        if (lastOrder) {
+                            setLastOrderItem(lastOrder.itemId);
+                        }
+                    }
                 } catch (error) {
                     console.error('Error loading popular items:', error);
                 }
             }
         };
         loadPopularItems();
-    }, [userLocation]);
+    }, [userLocation, currentUser]);
 
     useEffect(() => {
         const filtered = popularItems.filter(item => 
@@ -109,6 +118,7 @@ const PopularItems = ({ userLocation }) => {
                     <MenuItem 
                         key={item.id} 
                         item={item} 
+                        isPreviouslyOrdered={item.id === lastOrderItem}
                     />
                 ))}
             </div>
